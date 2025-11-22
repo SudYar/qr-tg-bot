@@ -53,7 +53,6 @@ class KeyboardFactory:
         Returns:
             dict: Словарь с данными
         """
-        # Обработка случая, когда данные разделены подчеркиванием
         parts = callback_data.split('_')
         return json.loads(parts[0])
     
@@ -80,7 +79,6 @@ class KeyboardFactory:
             count = selected_counts[i]
             
             if count == 0:
-                # Только кнопка "Выбрать"
                 markup.add(
                     InlineKeyboardButton(
                         text=f'{num}. Выбрать',
@@ -90,7 +88,6 @@ class KeyboardFactory:
                     )
                 )
             else:
-                # Кнопки "Выбрать" и "Убрать"
                 markup.add(
                     InlineKeyboardButton(
                         text=f'{num}. Выбрать',
@@ -106,7 +103,6 @@ class KeyboardFactory:
                     )
                 )
         
-        # Кнопка "Просуммировать"
         markup.add(
             InlineKeyboardButton(
                 text='Просуммировать',

@@ -22,19 +22,14 @@ class QRScanner:
             Tuple[str, bool]: Кортеж (данные QR-кода, найден ли QR-код)
         """
         try:
-            # Конвертация байтов в numpy array
             nparr = np.frombuffer(image_bytes, np.uint8)
             image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
             
             if image is None:
                 return '', False
             
-            # Инициализация детектора QR-кода
             detector = cv2.QRCodeDetector()
-            
-            # Обнаружение и декодирование QR-кода
             data, bbox, _ = detector.detectAndDecode(image)
-            
             has_qr = bbox is not None
             
             return data, has_qr

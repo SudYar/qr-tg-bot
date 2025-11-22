@@ -13,42 +13,32 @@ class QRCheckBot:
     
     def __init__(self):
         """Инициализация бота и обработчиков"""
-        # Валидация конфигурации
         try:
             config.validate()
         except ValueError as e:
-            print(f"⚠️  Предупреждение: {e}")
+            print(f"Предупреждение: {e}")
             print("Используются демо-настройки. Установите переменные окружения для production.")
         
-        # Создание экземпляра бота
         self.bot = telebot.TeleBot(config.TG_TOKEN)
-        
-        # Инициализация обработчиков
         self.message_handlers = MessageHandlers(self.bot)
         self.callback_handlers = CallbackHandlers(self.bot)
-        
-        # Регистрация обработчиков
         self._register_handlers()
     
     def _register_handlers(self) -> None:
         """Регистрация всех обработчиков бота"""
         
-        # Команды /start и /help
         @self.bot.message_handler(commands=['help', 'start'])
         def handle_start(message):
             self.message_handlers.handle_start(message)
         
-        # Обработка фотографий
         @self.bot.message_handler(func=lambda message: True, content_types=["photo"])
         def handle_photo(message):
             self.message_handlers.handle_photo(message)
         
-        # Обработка остальных сообщений
         @self.bot.message_handler(func=lambda message: True)
         def handle_default(message):
             self.message_handlers.handle_default(message)
         
-        # Обработка callback-запросов
         @self.bot.callback_query_handler(func=lambda call: True)
         def handle_callback(call):
             self.callback_handlers.handle_callback_query(call)
@@ -61,12 +51,11 @@ class QRCheckBot:
             use_webhook: True для работы через webhook, False для polling
         """
         if not use_webhook:
-            # Удаление webhook для локального запуска
             self.bot.remove_webhook()
-            print("🚀 Бот запущен в режиме polling...")
+            print("Бот запущен в режиме polling...")
             self.bot.infinity_polling()
         else:
-            print("🚀 Бот готов к работе через webhook...")
+            print("Бот готов к работе через webhook...")
     
     def process_update(self, update_data: dict) -> dict:
         """

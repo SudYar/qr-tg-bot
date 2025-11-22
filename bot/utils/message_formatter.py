@@ -62,7 +62,6 @@ class MessageFormatter:
             List[Tuple[str, str]]: Список пар (строка товара, строка выборов)
         """
         lines = message_text.split('\n')
-        # Пропускаем заголовок
         lines = lines[1:] if lines else []
         
         couples = []
@@ -170,16 +169,12 @@ class MessageFormatter:
             selected_users = match[3]
             total_selected = int(match[4])
             
-            # Извлечение пользователей и их количества
             user_pattern = re.compile(r"(@?\w+)\s*\((\d+)\)")
             users = user_pattern.findall(selected_users)
             
-            # Расчет суммы для каждого пользователя
             for user in users:
                 username = user[0]
                 user_count = int(user[1])
-                # Расчет: (цена * количество) * (доля пользователя / общее количество выбранных)
-                # Используем total_selected для деления, так как пользователи могут выбирать больше
                 if total_selected > 0:
                     user_totals[username] += (price * quantity) * (user_count / total_selected)
         

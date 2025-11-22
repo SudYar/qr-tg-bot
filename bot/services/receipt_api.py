@@ -91,6 +91,5 @@ class ReceiptAPI:
             pd.DataFrame: Таблица с колонками name, price, quantity
         """
         df = pd.json_normalize(api_response['data']['json']['items'])
-        # Конвертация цены из копеек в рубли
         df['price'] = df['price'].apply(lambda x: x / 100.0)
         return df[['name', 'price', 'quantity']]
