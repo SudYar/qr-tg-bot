@@ -4,6 +4,7 @@
 
 import telebot
 from telebot.types import CallbackQuery
+from ..logger import logger
 from ..utils.message_formatter import MessageFormatter
 from ..utils.keyboard_factory import KeyboardFactory
 from ..models.user_selection import UserSelection
@@ -16,17 +17,22 @@ class CallbackHandlers:
     def __init__(self, bot: telebot.TeleBot):
         """Инициализация обработчиков"""
         self.bot = bot
+        logger.debug("CallbackHandlers инициализирован")
     
     def handle_callback_query(self, call: CallbackQuery) -> None:
         """Обработка callback-запросов от inline-кнопок"""
+        logger.info(f"Получен callback от пользователя {call.from_user.id}: {call.data[:50]}")
+        
         try:
             data = KeyboardFactory.parse_callback_data(call.data)
             method = data['method']
+            logger.debug(f"Метод callback: {method}")
             
             if method == KeyboardFactory.ACTION_CHOICE:
                 type_ = data['type']
                 number = data['number']
                 is_plus = (type_ == KeyboardFactory.TYPE_PLUS)
+                logger.debug(f"Обработка выбора продукта #{number}, действие: {'добавить' if is_plus else 'убрать'}")
                 
                 self._handle_product_selection(
                     call, number, 
@@ -36,6 +42,7 @@ class CallbackHandlers:
                 )
                 
             elif method == KeyboardFactory.ACTION_SUM:
+                logger.debug("Обработка подсчета суммы")
                 self._handle_sum_calculation(call)
                 
         except Exception as e:
@@ -43,7 +50,7 @@ class CallbackHandlers:
                 call.id, 
                 text=f"Ошибка при обработке: {str(e)}"
             )
-            print(f"Ошибка в callback handler: {e}")
+            logger.error(f"Ошибка в callback handler от пользователя {call.from_user.id}: {e}", exc_info=True)
     
     def _handle_product_selection(self, call: CallbackQuery, 
                                   product_num: int,
@@ -127,5 +134,9 @@ class CallbackHandlers:
     def _handle_sum_calculation(self, call: CallbackQuery) -> None:
         """Обработка подсчета итоговой суммы"""
         user_totals = MessageFormatter.calculate_user_totals(call.message.text)
+        logger.info(f"Подсчитана сумма для {len(user_totals)} пользователей")
+        logger.debug(f"Суммы: {user_totals}")
+        
         result_text = MessageFormatter.format_totals_message(user_totals)
         self.bot.reply_to(call.message, result_text)
+        logger.debug(f"Итоговое сообщение отправлено пользователю {call.from_user.id}")

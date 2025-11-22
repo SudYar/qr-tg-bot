@@ -7,6 +7,7 @@ import requests
 import pandas as pd
 from typing import Optional
 from ..config import config
+from ..logger import logger
 
 
 class ReceiptAPIError(Exception):
@@ -24,6 +25,7 @@ class ReceiptAPI:
         
     def get_receipt_from_qr(self, qr_data: str) -> tuple[pd.DataFrame, dict]:
         """Получение данных чека по QR-коду"""
+        logger.debug(f"Запрос к API Proverkacheka с QR данными (длина: {len(qr_data)})")
         try:
             data = {
                 'token': self.token,
@@ -31,30 +33,45 @@ class ReceiptAPI:
             }
             response = requests.post(self.url, data=data, timeout=config.API_TIMEOUT)
             response.raise_for_status()
+            logger.debug(f"API ответил, статус: {response.status_code}")
             
             result = json.loads(response.text)
-            return self._parse_receipt_data(result), self._extract_metadata(result)
+            parsed_data = self._parse_receipt_data(result)
+            metadata = self._extract_metadata(result)
+            logger.info(f"Чек успешно обработан: {len(parsed_data)} товаров, сумма: {metadata.get('total_sum', 'N/A')}")
+            
+            return parsed_data, metadata
             
         except requests.RequestException as e:
+            logger.error(f"Ошибка запроса к API: {e}")
             raise ReceiptAPIError(f"Ошибка при запросе к API: {e}")
         except (KeyError, json.JSONDecodeError) as e:
+            logger.error(f"Ошибка парсинга ответа API: {e}")
             raise ReceiptAPIError(f"Ошибка при разборе ответа API: {e}")
     
     def get_receipt_from_file(self, file_bytes: bytes) -> tuple[pd.DataFrame, dict]:
         """Получение данных чека по файлу изображения"""
+        logger.debug(f"Запрос к API Proverkacheka с файлом изображения (размер: {len(file_bytes)} байт)")
         try:
             data = {'token': self.token}
             files = {'qrfile': file_bytes}
             
             response = requests.post(self.url, data=data, files=files, timeout=config.API_TIMEOUT)
             response.raise_for_status()
+            logger.debug(f"API ответил, статус: {response.status_code}")
             
             result = json.loads(response.text)
-            return self._parse_receipt_data(result), self._extract_metadata(result)
+            parsed_data = self._parse_receipt_data(result)
+            metadata = self._extract_metadata(result)
+            logger.info(f"Чек успешно обработан из файла: {len(parsed_data)} товаров, сумма: {metadata.get('total_sum', 'N/A')}")
+            
+            return parsed_data, metadata
             
         except requests.RequestException as e:
+            logger.error(f"Ошибка запроса к API с файлом: {e}")
             raise ReceiptAPIError(f"Ошибка при запросе к API: {e}")
         except (KeyError, json.JSONDecodeError) as e:
+            logger.error(f"Ошибка парсинга ответа API: {e}")
             raise ReceiptAPIError(f"Ошибка при разборе ответа API: {e}")
     
     @staticmethod

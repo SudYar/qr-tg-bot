@@ -4,6 +4,7 @@
 
 import telebot
 from .config import config
+from .logger import logger
 from .handlers.message_handlers import MessageHandlers
 from .handlers.callback_handlers import CallbackHandlers
 
@@ -13,16 +14,24 @@ class QRCheckBot:
     
     def __init__(self):
         """Инициализация бота и обработчиков"""
+        logger.info("Инициализация бота...")
+        
+        if config.DEBUG:
+            logger.debug("Режим отладки включен")
+        
         try:
             config.validate()
+            logger.info("Конфигурация валидна")
         except ValueError as e:
-            print(f"Предупреждение: {e}")
-            print("Используются демо-настройки. Установите переменные окружения для production.")
+            logger.warning(f"Ошибка конфигурации: {e}")
+            logger.warning("Используются демо-настройки. Установите переменные окружения для production.")
         
         self.bot = telebot.TeleBot(config.TG_TOKEN)
         self.message_handlers = MessageHandlers(self.bot)
         self.callback_handlers = CallbackHandlers(self.bot)
         self._register_handlers()
+        
+        logger.info("Бот успешно инициализирован")
     
     def _register_handlers(self) -> None:
         """Регистрация всех обработчиков бота"""
@@ -30,6 +39,13 @@ class QRCheckBot:
         @self.bot.message_handler(commands=['help', 'start'])
         def handle_start(message):
             self.message_handlers.handle_start(message)
+        
+        # Регистрация debug команды /test только в DEBUG режиме
+        if config.DEBUG:
+            @self.bot.message_handler(commands=['test'])
+            def handle_test(message):
+                self.message_handlers.handle_test(message)
+            logger.debug("Зарегистрирована debug команда /test")
         
         @self.bot.message_handler(func=lambda message: True, content_types=["photo"])
         def handle_photo(message):
@@ -52,10 +68,10 @@ class QRCheckBot:
         """
         if not use_webhook:
             self.bot.remove_webhook()
-            print("Бот запущен в режиме polling...")
+            logger.info("Бот запущен в режиме polling...")
             self.bot.infinity_polling()
         else:
-            print("Бот готов к работе через webhook...")
+            logger.info("Бот готов к работе через webhook...")
     
     def process_update(self, update_data: dict) -> dict:
         """

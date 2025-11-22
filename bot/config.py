@@ -4,6 +4,7 @@
 """
 
 import os
+import logging
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -24,6 +25,13 @@ class Config:
         )
         # Настройки таймаутов для API запросов (в секундах)
         self.API_TIMEOUT: int = int(os.getenv('API_TIMEOUT', '10'))
+        
+        # Режим отладки
+        self.DEBUG: bool = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
+        
+        # Уровень логирования
+        log_level_str = os.getenv('LOG_LEVEL', 'INFO' if not self.DEBUG else 'DEBUG')
+        self.LOG_LEVEL: int = getattr(logging, log_level_str.upper(), logging.INFO)
         
         # Попытка загрузки из старого config.py для обратной совместимости
         if not self.TG_TOKEN or not self.PROVERKACHEKA_TOKEN:
