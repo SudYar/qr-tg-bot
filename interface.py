@@ -26,12 +26,14 @@ if not token:
     except (ImportError, AttributeError):
         pass
 
-if token:
-    bot = telebot.TeleBot(token)
-else:
-    # Заглушка если токен не найден
-    bot = None
-    print("⚠️  Предупреждение: BOT_TOKEN не установлен в interface.py")
+if not token:
+    raise ValueError(
+        "❌ BOT_TOKEN не найден!\n"
+        "Установите переменную окружения BOT_TOKEN или создайте файл config.py с токеном.\n"
+        "Для работы бота используйте новую структуру: python run.py"
+    )
+
+bot = telebot.TeleBot(token)
 
 
 # ---------- methods -----------------------

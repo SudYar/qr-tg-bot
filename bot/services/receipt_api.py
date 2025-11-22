@@ -40,7 +40,7 @@ class ReceiptAPI:
                 'token': self.token,
                 'qrraw': qr_data
             }
-            response = requests.post(self.url, data=data, timeout=10)
+            response = requests.post(self.url, data=data, timeout=config.API_TIMEOUT)
             response.raise_for_status()
             
             result = json.loads(response.text)
@@ -68,7 +68,7 @@ class ReceiptAPI:
             data = {'token': self.token}
             files = {'qrfile': file_bytes}
             
-            response = requests.post(self.url, data=data, files=files, timeout=10)
+            response = requests.post(self.url, data=data, files=files, timeout=config.API_TIMEOUT)
             response.raise_for_status()
             
             result = json.loads(response.text)

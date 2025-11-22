@@ -22,6 +22,8 @@ class Config:
             'CHEK_URL', 
             'https://proverkacheka.com/api/v1/check/get'
         )
+        # Настройки таймаутов для API запросов (в секундах)
+        self.API_TIMEOUT: int = int(os.getenv('API_TIMEOUT', '10'))
         
         # Попытка загрузки из старого config.py для обратной совместимости
         if not self.TG_TOKEN or not self.PROVERKACHEKA_TOKEN:

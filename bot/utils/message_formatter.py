@@ -178,8 +178,10 @@ class MessageFormatter:
             for user in users:
                 username = user[0]
                 user_count = int(user[1])
-                # Расчет: (цена * количество) * (доля пользователя / общее количество)
-                user_totals[username] += (price * quantity) * (user_count / max(quantity, total_selected))
+                # Расчет: (цена * количество) * (доля пользователя / общее количество выбранных)
+                # Используем total_selected для деления, так как пользователи могут выбирать больше
+                if total_selected > 0:
+                    user_totals[username] += (price * quantity) * (user_count / total_selected)
         
         return dict(user_totals)
     

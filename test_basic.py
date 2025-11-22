@@ -153,6 +153,7 @@ def test_calculate_user_totals():
     
     # user1: (50*2)*(1/2) + (60*1)*(1/1) = 50 + 60 = 110
     # user2: (50*2)*(1/2) = 50
+    # Расчет исправлен: используется total_selected для деления
     assert '@user1' in totals
     assert 'user2' in totals
     assert abs(totals['@user1'] - 110.0) < 0.01
