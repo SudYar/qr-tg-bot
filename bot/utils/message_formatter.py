@@ -27,16 +27,25 @@ class MessageFormatter:
     )
     
     @classmethod
-    def create_receipt_message(cls, df: pd.DataFrame) -> str:
-        """
-        Создание сообщения со списком товаров из чека
+    def create_receipt_message(cls, df: pd.DataFrame, metadata: dict = None) -> str:
+        """Создание сообщения со списком товаров из чека"""
+        message_parts = []
         
-        Args:
-            df: DataFrame с колонками name, price, quantity
+        # Добавляем метаданные чека в начало
+        if metadata:
+            meta_lines = []
+            if 'store_name' in metadata:
+                meta_lines.append(f"<b>Магазин:</b> {metadata['store_name']}")
+            if 'store_address' in metadata:
+                meta_lines.append(f"<b>Адрес:</b> {metadata['store_address']}")
+            if 'total_sum' in metadata:
+                meta_lines.append(f"<b>Итого:</b> {metadata['total_sum']:.2f} р.")
             
-        Returns:
-            str: Отформатированное сообщение
-        """
+            if meta_lines:
+                message_parts.append('\n'.join(meta_lines))
+                message_parts.append('')  # Пустая строка для разделения
+        
+        # Создаем список продуктов
         products = []
         for idx, row in df.iterrows():
             product_line = cls.PRODUCT_TEMPLATE.format(
@@ -48,21 +57,24 @@ class MessageFormatter:
             selection_line = cls.SELECTION_TEMPLATE.format(users='', total=0)
             products.append(f"{product_line}\n{selection_line}")
         
-        return cls.TITLE_TEMPLATE + '\n'.join(products)
+        # Оборачиваем список продуктов в collapsible блок
+        products_text = '\n'.join(products)
+        message_parts.append(f"<blockquote expandable>{cls.TITLE_TEMPLATE}{products_text}</blockquote>")
+        
+        return '\n'.join(message_parts)
     
     @classmethod
     def parse_message_lines(cls, message_text: str) -> List[Tuple[str, str]]:
-        """
-        Разбор сообщения на пары строк (товар, выборы)
+        """Разбор сообщения на пары строк (товар, выборы)"""
+        # Извлекаем содержимое из blockquote если оно есть
+        if '<blockquote' in message_text:
+            start = message_text.find('>')
+            end = message_text.rfind('</blockquote>')
+            if start != -1 and end != -1:
+                message_text = message_text[start+1:end]
         
-        Args:
-            message_text: Текст сообщения
-            
-        Returns:
-            List[Tuple[str, str]]: Список пар (строка товара, строка выборов)
-        """
         lines = message_text.split('\n')
-        lines = lines[1:] if lines else []
+        lines = lines[1:] if lines else []  # Пропускаем заголовок
         
         couples = []
         for i in range(0, len(lines), 2):
@@ -73,43 +85,19 @@ class MessageFormatter:
     
     @classmethod
     def extract_quantity(cls, product_line: str) -> Optional[int]:
-        """
-        Извлечение количества товара из строки
-        
-        Args:
-            product_line: Строка с информацией о товаре
-            
-        Returns:
-            Optional[int]: Количество или None
-        """
+        """Извлечение количества товара из строки"""
         match = cls.QUANTITY_PATTERN.search(product_line)
         return int(match.group(1)) if match else None
     
     @classmethod
     def extract_total_selected(cls, selection_line: str) -> Optional[int]:
-        """
-        Извлечение общего количества выбранных товаров
-        
-        Args:
-            selection_line: Строка с информацией о выборах
-            
-        Returns:
-            Optional[int]: Количество или None
-        """
+        """Извлечение общего количества выбранных товаров"""
         match = cls.TOTAL_PATTERN.search(selection_line)
         return int(match.group(1)) if match else None
     
     @classmethod
     def extract_users(cls, selection_line: str) -> Tuple[List[Tuple[str, int]], List[Tuple[str, int]]]:
-        """
-        Извлечение пользователей и их количества из строки выборов
-        
-        Args:
-            selection_line: Строка с информацией о выборах
-            
-        Returns:
-            Tuple: (пользователи с @username, пользователи по имени)
-        """
+        """Извлечение пользователей и их количества из строки выборов"""
         selected_text = selection_line.replace("Выбрали: ", "")
         
         users_with_at = [
@@ -128,17 +116,7 @@ class MessageFormatter:
     def format_selection_line(cls, users_with_at: List[Tuple[str, int]], 
                              users_without_at: List[Tuple[str, int]], 
                              total: int) -> str:
-        """
-        Форматирование строки с выборами пользователей
-        
-        Args:
-            users_with_at: Список пользователей с @username
-            users_without_at: Список пользователей по имени
-            total: Общее количество выбранных товаров
-            
-        Returns:
-            str: Отформатированная строка
-        """
+        """Форматирование строки с выборами пользователей"""
         users_with_at_str = ", ".join([f"@{user[0]} ({user[1]})" for user in users_with_at])
         users_without_at_str = ", ".join([f"{user[0]} ({user[1]})" for user in users_without_at])
         
@@ -149,15 +127,7 @@ class MessageFormatter:
     
     @classmethod
     def calculate_user_totals(cls, message_text: str) -> Dict[str, float]:
-        """
-        Расчет суммы для каждого пользователя
-        
-        Args:
-            message_text: Текст сообщения с товарами и выборами
-            
-        Returns:
-            Dict[str, float]: Словарь {пользователь: сумма}
-        """
+        """Расчет суммы для каждого пользователя"""
         user_totals = defaultdict(float)
         
         matches = cls.FULL_PRODUCT_PATTERN.findall(message_text)
@@ -172,6 +142,7 @@ class MessageFormatter:
             user_pattern = re.compile(r"(@?\w+)\s*\((\d+)\)")
             users = user_pattern.findall(selected_users)
             
+            # Пропорциональное распределение стоимости по пользователям
             for user in users:
                 username = user[0]
                 user_count = int(user[1])
@@ -182,15 +153,7 @@ class MessageFormatter:
     
     @classmethod
     def format_totals_message(cls, user_totals: Dict[str, float]) -> str:
-        """
-        Форматирование итогового сообщения с суммами
-        
-        Args:
-            user_totals: Словарь с суммами пользователей
-            
-        Returns:
-            str: Отформатированное сообщение
-        """
+        """Форматирование итогового сообщения с суммами"""
         if not user_totals:
             return 'Никто ещё не отметился'
         

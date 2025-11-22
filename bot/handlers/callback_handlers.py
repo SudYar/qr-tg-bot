@@ -14,21 +14,11 @@ class CallbackHandlers:
     """Класс обработчиков callback-запросов"""
     
     def __init__(self, bot: telebot.TeleBot):
-        """
-        Инициализация обработчиков
-        
-        Args:
-            bot: Экземпляр TeleBot
-        """
+        """Инициализация обработчиков"""
         self.bot = bot
     
     def handle_callback_query(self, call: CallbackQuery) -> None:
-        """
-        Обработка callback-запросов от inline-кнопок
-        
-        Args:
-            call: Объект callback-запроса
-        """
+        """Обработка callback-запросов от inline-кнопок"""
         try:
             data = KeyboardFactory.parse_callback_data(call.data)
             method = data['method']
@@ -60,16 +50,7 @@ class CallbackHandlers:
                                   username: Optional[str], 
                                   first_name: str,
                                   is_plus: bool) -> None:
-        """
-        Обработка выбора/снятия выбора товара
-        
-        Args:
-            call: Объект callback-запроса
-            product_num: Номер товара
-            username: Username пользователя
-            first_name: Имя пользователя
-            is_plus: True для добавления, False для удаления
-        """
+        """Обработка выбора/снятия выбора товара"""
         couples = MessageFormatter.parse_message_lines(call.message.text)
         
         if product_num < 1 or product_num > len(couples):
@@ -144,12 +125,7 @@ class CallbackHandlers:
                 print(f"Ошибка при обновлении сообщения: {e}")
     
     def _handle_sum_calculation(self, call: CallbackQuery) -> None:
-        """
-        Обработка подсчета итоговой суммы
-        
-        Args:
-            call: Объект callback-запроса
-        """
+        """Обработка подсчета итоговой суммы"""
         user_totals = MessageFormatter.calculate_user_totals(call.message.text)
         result_text = MessageFormatter.format_totals_message(user_totals)
         self.bot.reply_to(call.message, result_text)
