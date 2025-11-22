@@ -1,12 +1,37 @@
+"""
+Модуль интерфейса (Legacy версия для обратной совместимости)
+
+ВНИМАНИЕ: Этот файл оставлен для обратной совместимости.
+Новый код использует модульную структуру в папке bot/
+
+Функциональность перенесена в:
+- bot/handlers/callback_handlers.py
+- bot/utils/message_formatter.py
+- bot/models/user_selection.py
+"""
 
 import telebot
 from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from collections import defaultdict
 import re
+import os
 
 # ---------- get bot -------------------
-# bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
-bot = telebot.TeleBot('7196565532:AAHxLmUKNjHn7GHwvRJRrXoHhsf3dWxh0OA')
+# Получение токена из переменных окружения или config.py
+token = os.getenv('BOT_TOKEN', '')
+if not token:
+    try:
+        import config
+        token = config.TG_token
+    except (ImportError, AttributeError):
+        pass
+
+if token:
+    bot = telebot.TeleBot(token)
+else:
+    # Заглушка если токен не найден
+    bot = None
+    print("⚠️  Предупреждение: BOT_TOKEN не установлен в interface.py")
 
 
 # ---------- methods -----------------------
