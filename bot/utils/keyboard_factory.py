@@ -3,6 +3,8 @@
 """
 
 import json
+import re
+
 import pandas as pd
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from typing import List, Optional
@@ -55,7 +57,7 @@ class KeyboardFactory:
             
             # Извлекаем первые несколько слов из названия продукта (до 15 символов)
             product_name = row['name']
-            short_name = product_name[:15] + '...' if len(product_name) > 15 else product_name
+            short_name = product_name[:13] + '...' if len(product_name) > 13 else product_name
             
             # Формат кнопки: "1. Хлеб 0/2" (номер, название, выбрано/всего)
             button_text = f'{num}. {short_name} {count}/{total_qty}'
@@ -140,9 +142,38 @@ class KeyboardFactory:
         )
         
         return markup
-    
+
     @classmethod
-    def create_keyboard_from_message(cls, message_text: str, df: pd.DataFrame = None) -> InlineKeyboardMarkup:
+    def change_product_selection_keyboard(cls, products_count: int, old_markup: InlineKeyboardMarkup,
+                                          selected_counts: Optional[List[int]] = None) -> InlineKeyboardMarkup:
+        """Редактирование клавиатуры для выбора товаров"""
+        markup = InlineKeyboardMarkup()
+
+        if selected_counts is None:
+            selected_counts = [0] * products_count
+        if len(selected_counts) + 1 == len(old_markup.keyboard):
+            for i in range(products_count):
+                num = i + 1
+                count = selected_counts[i]
+                row = old_markup.keyboard[i]
+
+                if count == 0 and len(row) > 1:
+                    row.pop(-1)
+                elif count > 0 and len(row) == 1:
+                    row.append(
+                        InlineKeyboardButton(
+                            text='Убрать',
+                            callback_data=cls.create_callback_data(
+                                cls.ACTION_CHOICE, cls.TYPE_MINUS, num
+                            )
+                        )
+                    )
+                row[0].text = re.sub(r"\d(?=/\d$)", str(count), row[0].text)
+
+        return old_markup
+
+    @classmethod
+    def create_keyboard_from_message(cls, message_text: str, df: pd.DataFrame = None, old_markup: InlineKeyboardMarkup = None) -> InlineKeyboardMarkup:
         """Создание клавиатуры на основе текста сообщения"""
         from .message_formatter import MessageFormatter
         
@@ -156,5 +187,6 @@ class KeyboardFactory:
         # Если есть DataFrame, используем улучшенные кнопки
         if df is not None:
             return cls.create_product_selection_keyboard_with_data(df, selected_counts)
-        
+        if old_markup is not None:
+            return cls.change_product_selection_keyboard(len(couples), old_markup, selected_counts)
         return cls.create_product_selection_keyboard(len(couples), selected_counts)

@@ -21,7 +21,7 @@ class CallbackHandlers:
     
     def handle_callback_query(self, call: CallbackQuery) -> None:
         """Обработка callback-запросов от inline-кнопок"""
-        logger.info(f"Получен callback от пользователя {call.from_user.id}: {call.data[:50]}")
+        logger.info(f"Получен callback от пользователя {call.from_user.username}: {call.data[:50]}")
         
         try:
             data = KeyboardFactory.parse_callback_data(call.data)
@@ -50,7 +50,7 @@ class CallbackHandlers:
                 call.id, 
                 text=f"Ошибка при обработке: {str(e)}"
             )
-            logger.error(f"Ошибка в callback handler от пользователя {call.from_user.id}: {e}", exc_info=True)
+            logger.error(f"Ошибка в callback handler от пользователя {call.from_user.username}: {e}", exc_info=True)
     
     def _handle_product_selection(self, call: CallbackQuery, 
                                   product_num: int,
@@ -58,8 +58,9 @@ class CallbackHandlers:
                                   first_name: str,
                                   is_plus: bool) -> None:
         """Обработка выбора/снятия выбора товара"""
-        couples = MessageFormatter.parse_message_lines(call.message.text)
-        
+        from telebot import formatting
+        html_text = formatting.apply_html_entities(call.message.text, call.message.entities, None)
+        couples = MessageFormatter.parse_message_lines(html_text)
         if product_num < 1 or product_num > len(couples):
             self.bot.answer_callback_query(
                 call.id, 
@@ -117,8 +118,9 @@ class CallbackHandlers:
         if has_error:
             self.bot.answer_callback_query(call.id, text=error_message)
         else:
-            new_text = MessageFormatter.TITLE_TEMPLATE + '\n'.join(new_lines)
-            markup = KeyboardFactory.create_keyboard_from_message(new_text)
+            new_text = MessageFormatter.change_message_lines(html_text, new_lines)
+            current_markup = call.message.reply_markup
+            markup = KeyboardFactory.create_keyboard_from_message(new_text, old_markup=current_markup)
             
             try:
                 self.bot.edit_message_text(
@@ -126,7 +128,8 @@ class CallbackHandlers:
                     reply_markup=markup,
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
-                    entities=call.message.entities
+                    entities=call.message.entities,
+                    parse_mode='HTML'
                 )
             except Exception as e:
                 print(f"Ошибка при обновлении сообщения: {e}")
@@ -139,4 +142,4 @@ class CallbackHandlers:
         
         result_text = MessageFormatter.format_totals_message(user_totals)
         self.bot.reply_to(call.message, result_text)
-        logger.debug(f"Итоговое сообщение отправлено пользователю {call.from_user.id}")
+        logger.debug(f"Итоговое сообщение отправлено пользователю {call.from_user.username}")

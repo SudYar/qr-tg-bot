@@ -7,13 +7,17 @@ import re
 from typing import List, Tuple, Dict, Optional
 from collections import defaultdict
 
+from bot.logger import logger
+
 
 class MessageFormatter:
     """Класс для создания и парсинга сообщений"""
     
     # Шаблоны сообщений
     TITLE_TEMPLATE = "Список продуктов из чека:\n"
-    PRODUCT_TEMPLATE = "{num}. Название: {name}, Цена: *{price}* р., Количество: *{quantity}*"
+    PRODUCT_TEMPLATE = "{num}. Название: {name}, Цена: {price} р., Количество: {quantity}"
+    #todo Привести к такому формату когда перейдем на aiogram
+    # PRODUCT_TEMPLATE = "{num}. Название: {name}, Цена: <b>{price}</b> р., Количество: <b>{quantity}</b>"
     SELECTION_TEMPLATE = "Выбрали: {users}, Всего: {total}"
     
     # Регулярные выражения
@@ -59,7 +63,7 @@ class MessageFormatter:
         
         # Оборачиваем список продуктов в collapsible блок
         products_text = '\n'.join(products)
-        message_parts.append(f"<blockquote expandable>{cls.TITLE_TEMPLATE}{products_text}</blockquote>")
+        message_parts.append(f"{cls.TITLE_TEMPLATE}<blockquote expandable>{products_text}</blockquote>")
         
         return '\n'.join(message_parts)
     
@@ -68,13 +72,13 @@ class MessageFormatter:
         """Разбор сообщения на пары строк (товар, выборы)"""
         # Извлекаем содержимое из blockquote если оно есть
         if '<blockquote' in message_text:
-            start = message_text.find('>')
+            start = message_text.find('<blockquote expandable>') + len('<blockquote expandable>')
             end = message_text.rfind('</blockquote>')
             if start != -1 and end != -1:
-                message_text = message_text[start+1:end]
+                message_text = message_text[start:end]
         
         lines = message_text.split('\n')
-        lines = lines[1:] if lines else []  # Пропускаем заголовок
+        # lines = lines[1:] if lines else []  # Пропускаем заголовок
         
         couples = []
         for i in range(0, len(lines), 2):
@@ -82,6 +86,19 @@ class MessageFormatter:
                 couples.append((lines[i], lines[i + 1]))
         
         return couples
+
+    @classmethod
+    def change_message_lines(cls, message_html_text: str, new_lines: List) -> str:
+        """Редактирование Html сообщения новыми значениями продуктов"""
+        # Извлекаем содержимое из blockquote если оно есть
+        logger.info(f"Редактирование Html сообщения новыми значениями продуктов ")
+        if '<blockquote' in message_html_text:
+            start = message_html_text.find('<blockquote expandable>') + len('<blockquote expandable>')
+            end = message_html_text.rfind('</blockquote>')
+            if start != -1 and end != -1:
+                message_text = message_html_text[:start]+'\n'.join(new_lines)+message_html_text[end:]
+                return message_text
+        raise Exception('У сообщения битый формат')
     
     @classmethod
     def extract_quantity(cls, product_line: str) -> Optional[int]:
@@ -157,5 +174,5 @@ class MessageFormatter:
         if not user_totals:
             return 'Никто ещё не отметился'
         
-        lines = [f"{user} должен {total:.2f} р." for user, total in user_totals.items()]
+        lines = [f"Сумма {user}: {total:.2f} р." for user, total in user_totals.items()]
         return '\n'.join(lines)
