@@ -147,6 +147,8 @@ class KeyboardFactory:
     def change_product_selection_keyboard(cls, products_count: int, old_markup: InlineKeyboardMarkup,
                                           selected_counts: Optional[List[int]] = None) -> InlineKeyboardMarkup:
         """Редактирование клавиатуры для выбора товаров"""
+        # TODO: При переходе на aiogram использовать InlineKeyboardBuilder для более удобного
+        # динамического создания клавиатур вместо модификации существующей
         markup = InlineKeyboardMarkup()
 
         if selected_counts is None:

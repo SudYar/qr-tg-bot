@@ -70,15 +70,18 @@ class MessageFormatter:
     @classmethod
     def parse_message_lines(cls, message_text: str) -> List[Tuple[str, str]]:
         """Разбор сообщения на пары строк (товар, выборы)"""
-        # Извлекаем содержимое из blockquote если оно есть
+        # TODO: При переходе на aiogram использовать встроенные методы парсинга HTML entities
+        # вместо ручного извлечения из blockquote
         if '<blockquote' in message_text:
-            start = message_text.find('<blockquote expandable>') + len('<blockquote expandable>')
-            end = message_text.rfind('</blockquote>')
-            if start != -1 and end != -1:
-                message_text = message_text[start:end]
+            tag = '<blockquote expandable>'
+            start_pos = message_text.find(tag)
+            end_pos = message_text.rfind('</blockquote>')
+            
+            if start_pos != -1 and end_pos != -1:
+                start = start_pos + len(tag)
+                message_text = message_text[start:end_pos]
         
         lines = message_text.split('\n')
-        # lines = lines[1:] if lines else []  # Пропускаем заголовок
         
         couples = []
         for i in range(0, len(lines), 2):
@@ -90,13 +93,17 @@ class MessageFormatter:
     @classmethod
     def change_message_lines(cls, message_html_text: str, new_lines: List) -> str:
         """Редактирование Html сообщения новыми значениями продуктов"""
-        # Извлекаем содержимое из blockquote если оно есть
+        # TODO: При переходе на aiogram упростить работу с HTML форматированием
+        # используя MessageEntity вместо ручной работы со строками
         logger.info(f"Редактирование Html сообщения новыми значениями продуктов ")
         if '<blockquote' in message_html_text:
-            start = message_html_text.find('<blockquote expandable>') + len('<blockquote expandable>')
-            end = message_html_text.rfind('</blockquote>')
-            if start != -1 and end != -1:
-                message_text = message_html_text[:start]+'\n'.join(new_lines)+message_html_text[end:]
+            tag = '<blockquote expandable>'
+            start_pos = message_html_text.find(tag)
+            end_pos = message_html_text.rfind('</blockquote>')
+            
+            if start_pos != -1 and end_pos != -1:
+                start = start_pos + len(tag)
+                message_text = message_html_text[:start]+'\n'.join(new_lines)+message_html_text[end_pos:]
                 return message_text
         raise Exception('У сообщения битый формат')
     
@@ -145,6 +152,8 @@ class MessageFormatter:
     @classmethod
     def calculate_user_totals(cls, message_text: str) -> Dict[str, float]:
         """Расчет суммы для каждого пользователя"""
+        # TODO: Рассмотреть возможность хранения данных о выборах в базе данных
+        # вместо парсинга из текста сообщения при переходе на aiogram
         user_totals = defaultdict(float)
         
         matches = cls.FULL_PRODUCT_PATTERN.findall(message_text)

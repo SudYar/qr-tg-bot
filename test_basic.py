@@ -32,17 +32,30 @@ def test_message_formatter():
 
 def test_parse_message_lines():
     """Тест парсинга сообщения"""
-    message = """Список продуктов из чека:
-1. Название: Хлеб, Цена: 45.5 р., Количество: 1
+    # Тест с blockquote (новый формат)
+    message_with_blockquote = """<b>Магазин:</b> Тестовый магазин
+
+Список продуктов из чека:
+<blockquote expandable>1. Название: Хлеб, Цена: 45.5 р., Количество: 1
 Выбрали: , Всего: 0
 2. Название: Молоко, Цена: 65.0 р., Количество: 2
-Выбрали: , Всего: 0"""
+Выбрали: , Всего: 0</blockquote>"""
     
-    couples = MessageFormatter.parse_message_lines(message)
+    couples = MessageFormatter.parse_message_lines(message_with_blockquote)
     
     assert len(couples) == 2
     assert 'Хлеб' in couples[0][0]
     assert 'Молоко' in couples[1][0]
+    
+    # Тест без blockquote (старый формат для обратной совместимости)
+    message_plain = """1. Название: Хлеб, Цена: 45.5 р., Количество: 1
+Выбрали: , Всего: 0
+2. Название: Молоко, Цена: 65.0 р., Количество: 2
+Выбрали: , Всего: 0"""
+    
+    couples_plain = MessageFormatter.parse_message_lines(message_plain)
+    assert len(couples_plain) == 2
+    
     print("✅ test_parse_message_lines passed")
 
 

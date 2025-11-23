@@ -58,6 +58,8 @@ class CallbackHandlers:
                                   first_name: str,
                                   is_plus: bool) -> None:
         """Обработка выбора/снятия выбора товара"""
+        # TODO: При переходе на aiogram использовать FSM (Finite State Machine) для хранения
+        # состояния выборов пользователей вместо парсинга HTML из сообщения
         from telebot import formatting
         html_text = formatting.apply_html_entities(call.message.text, call.message.entities, None)
         couples = MessageFormatter.parse_message_lines(html_text)
