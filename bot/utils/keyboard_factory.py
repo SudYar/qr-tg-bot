@@ -53,11 +53,11 @@ class KeyboardFactory:
         for idx, row in df.iterrows():
             num = idx + 1
             count = selected_counts[idx]
-            total_qty = int(row['quantity'])
+            total_qty = max(int(row['quantity']), 1)
             
             # Извлекаем первые несколько слов из названия продукта (до 15 символов)
             product_name = row['name']
-            short_name = product_name[:13] + '...' if len(product_name) > 13 else product_name
+            short_name = product_name[:12] + '...' if len(product_name) > 12 else product_name
             
             # Формат кнопки: "1. Хлеб 0/2" (номер, название, выбрано/всего)
             button_text = f'{num}. {short_name} {count}/{total_qty}'
@@ -170,12 +170,13 @@ class KeyboardFactory:
                             )
                         )
                     )
-                row[0].text = re.sub(r"\d(?=/\d$)", str(count), row[0].text)
+                row[0].text = re.sub(r"\d+(?=/\d+$)", str(count), row[0].text)
 
         return old_markup
 
     @classmethod
-    def create_keyboard_from_message(cls, message_text: str, df: pd.DataFrame = None, old_markup: InlineKeyboardMarkup = None) -> InlineKeyboardMarkup:
+    def create_keyboard_from_message(cls, message_text: str, df: pd.DataFrame = None,
+                                     old_markup: InlineKeyboardMarkup = None) -> InlineKeyboardMarkup:
         """Создание клавиатуры на основе текста сообщения"""
         from .message_formatter import MessageFormatter
         
